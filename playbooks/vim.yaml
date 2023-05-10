@@ -1,0 +1,7 @@
+- name: "Install latest VIM"
+  hosts: "*"
+  tasks:
+    - name: "Install VIM"
+      apt:
+        name: vim
+        state: latest

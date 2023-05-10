@@ -1,0 +1,24 @@
+---
+- name: Install Jenkins plugins
+  hosts: jenkins
+  become: true
+  vars:
+    jenkins_home: /var/lib/jenkins
+    jenkins_cli: "{{ jenkins_home }}/jenkins-cli.jar"
+    jenkins_plugins:
+      - plugin-id: git
+        version: 4.7.1
+      - plugin-id: ansible
+        version: 1.1.7
+  tasks:
+    - name: Download Jenkins CLI tool
+      get_url:
+        url: "http://localhost:8081/jnlpJars/jenkins-cli.jar"
+        dest: "{{ jenkins_cli }}"
+        user: admin
+        password: admin
+    - name: Install Jenkins plugins
+      shell: java -jar {{ jenkins_cli }} -s http://localhost:8081 install-plugin {{ item.plugin-id }}:{{ item.version }} --username admin --password admin
+      with_items: "{{ jenkins_plugins }}"
+      args:
+        executable: /bin/bash

@@ -1,0 +1,62 @@
+- name: Install Docker and set up Jenkins container
+  hosts: jenkins
+  become: true
+  vars:
+    jenkins_volume_path: /var/jenkins_home
+    jenkins_network_name: jenkins-network
+    jenkins_image: jenkins/jenkins:lts-alpine
+    jenkins_container_name: jenkins
+    jenkins_userid: admin
+    jenkins_password: admin
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Check if Docker is installed
+      stat:
+        path: /usr/bin/docker
+      register: docker_installed
+
+      changed_when: false
+
+    - name: Install Docker if not already installed
+      apt:
+        name: docker.io
+        state: present
+
+      when: not docker_installed.stat.exists
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+
+    - name: Create custom network for Jenkins
+      docker_network:
+        name: "{{ jenkins_network_name }}"
+        driver: bridge
+        state: present
+
+    - name: Create Jenkins home directory
+      file:
+        path: "{{ jenkins_volume_path }}"
+        state: directory
+        mode: "0777"
+
+    - name: Ensure Jenkins data directory exists
+      file:
+        path: "{{ jenkins_volume_path }}"
+        state: directory
+
+    - name: Set up Jenkins container
+      docker_container:
+        name: "{{ jenkins_container_name }}"
+        image: "{{ jenkins_image }}"
+        env:
+          JENKINS_USER_ID: "{{ jenkins_userid }}"
+          JENKINS_PASSWORD: "{{ jenkins_password }}"
+        state: started
+        ports:
+          - "8081:8080"
+        volumes:
+          - "{{ jenkins_volume_path }}:/var/jenkins_home"
+        networks:
+          - name: "{{ jenkins_network_name }}"

@@ -1,0 +1,10 @@
+- name:  "Install latest NGINX"
+  hosts: "*"
+  tasks:
+    - name: "install nginx"
+      apt:
+        name: nginx
+        state: present
+        update_cache: true
+      become: true
+
